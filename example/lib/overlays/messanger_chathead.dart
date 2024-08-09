@@ -20,6 +20,8 @@ class _MessangerChatHeadState extends State<MessangerChatHead> {
   final _receivePort = ReceivePort();
   SendPort? homePort;
   String? messageFromOverlay;
+  OverlayPosition? _cacheOverlayPosition;
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -45,21 +47,39 @@ class _MessangerChatHeadState extends State<MessangerChatHead> {
       elevation: 0.0,
       child: GestureDetector(
         onTap: () async {
+          if (_isProcessing) {
+            return;
+          }
+
+          print("Process start");
+          _isProcessing = true;
           if (_currentShape == BoxShape.rectangle) {
-            await FlutterOverlayWindow.resizeOverlay(50, 100, true);
+            await FlutterOverlayWindow.resizeOverlay(50, 50, true);
+            if (_cacheOverlayPosition != null) {
+              await FlutterOverlayWindow.moveOverlay(_cacheOverlayPosition!);
+              _cacheOverlayPosition = null;
+            }
+            await FlutterOverlayWindow.setIgnoreSnapping(false);
             setState(() {
               _currentShape = BoxShape.circle;
             });
           } else {
+            await FlutterOverlayWindow.setIgnoreSnapping(true);
+            _cacheOverlayPosition =
+                await FlutterOverlayWindow.getOverlayPosition();
+            await FlutterOverlayWindow.moveOverlay(const OverlayPosition(0, 0));
+            await Future.delayed(const Duration(milliseconds: 500));
             await FlutterOverlayWindow.resizeOverlay(
               WindowSize.matchParent,
-              WindowSize.matchParent,
+              100,
               false,
             );
             setState(() {
               _currentShape = BoxShape.rectangle;
             });
           }
+          _isProcessing = false;
+          print("Process done");
         },
         child: Container(
           height: MediaQuery.of(context).size.height,
