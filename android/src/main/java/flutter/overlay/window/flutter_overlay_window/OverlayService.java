@@ -407,34 +407,51 @@ public class OverlayService extends Service implements View.OnTouchListener {
         public TrayAnimationTimerTask() {
             super();
             mDestY = lastYPosition;
-            switch (WindowSetup.positionGravity) {
-                case "auto":
-                    mDestX = (params.x + (flutterView.getWidth() / 2)) <= szWindow.x / 2 ? 0 : szWindow.x - flutterView.getWidth();
-                    return;
-                case "left":
-                    mDestX = 0;
-                    return;
-                case "right":
-                    mDestX = szWindow.x - flutterView.getWidth();
-                    return;
-                default:
-                    mDestX = params.x;
-                    mDestY = params.y;
-                    break;
+
+            // Calculate the middle of the screen
+            int screenMidX = szWindow.x / 2;
+
+            // Calculate the rightmost position the view can occupy
+            int rightEdgeX = screenMidX - flutterView.getWidth() / 2;
+
+            // Determine if the view should snap to the left or right based on its current position
+            if (params.x < 0) {
+                // Snap to the left
+                mDestX = -screenMidX + flutterView.getWidth() / 2;
+            } else {
+                // Snap to the right
+                mDestX = rightEdgeX;
             }
+
+            Log.d("TrayAnimationTimerTask", "mDestX: " + mDestX + " | screenMidX: " + screenMidX);
         }
 
         @Override
         public void run() {
             mAnimationHandler.post(() -> {
+                if (WindowSetup.ignoreSnapping) {
+                    TrayAnimationTimerTask.this.cancel();
+                    mTrayAnimationTimer.cancel();
+                    return;
+                }
+                // Smooth animation to move the view to the target position
                 params.x = (2 * (params.x - mDestX)) / 3 + mDestX;
-                params.y = (2 * (params.y - mDestY)) / 3 + mDestY;
+                params.y = mDestY;
+
+                Log.d("TrayAnimationTimerTask", "params.x: " + params.x + " | mDestX: " + mDestX);
+
                 if (windowManager != null) {
                     windowManager.updateViewLayout(flutterView, params);
                 }
-                if (Math.abs(params.x - mDestX) < 2 && Math.abs(params.y - mDestY) < 2) {
+
+                // Stop the animation when the view is close enough to the target position
+                if (Math.abs(params.x - mDestX) < 2) {
+                    params.x = mDestX;
                     TrayAnimationTimerTask.this.cancel();
                     mTrayAnimationTimer.cancel();
+                    if (windowManager != null) {
+                        windowManager.updateViewLayout(flutterView, params);
+                    }
                 }
             });
         }

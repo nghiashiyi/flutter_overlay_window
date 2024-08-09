@@ -111,10 +111,10 @@ public class FlutterOverlayWindowPlugin implements
             result.success(null);
         } else if (call.method.equals("isOverlayActive")) {
             result.success(OverlayService.isRunning);
-            return;
-        } else if (call.method.equals("isOverlayActive")) {
-            result.success(OverlayService.isRunning);
-            return;
+        } else if (call.method.equals("ignoreSnapping")) {
+            boolean ignoreSnapping = call.argument("ignoreSnappingParams");
+            WindowSetup.ignoreSnapping = ignoreSnapping;
+            result.success(true);
         } else if (call.method.equals("moveOverlay")) {
             int x = call.argument("x");
             int y = call.argument("y");
