@@ -133,6 +133,19 @@ class FlutterOverlayWindow {
     return _res;
   }
 
+  /// Update the overlay size in the screen
+  static Future<bool?> setIgnoreSnapping(
+    bool ignoreSnapping
+  ) async {
+    final bool? _res = await _channel.invokeMethod<bool?>(
+      'ignoreSnapping',
+      {
+        'ignoreSnappingParams': ignoreSnapping,
+      },
+    );
+    return _res;
+  }
+
   /// Update the overlay position in the screen
   ///
   /// `position` the new position of the overlay
